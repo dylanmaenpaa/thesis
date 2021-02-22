@@ -40,23 +40,33 @@ def calc_avg_clients_metrics(clients_metrics):
         'average_loss': avg_loss,
     }
 
-
 def update_models(clients, graph, device, C):
     """
         Update client models by aggregating and averaging all clients models with neighbors.
-        CAUTION: this function assumes clients got equally amount of data!
     """
     # aggregate and average weight with neighbors
     new_clients = copy.deepcopy(clients)
     for client_idx, client in enumerate(new_clients):
+        total_dataset_len = len(client.dataset)
         client_model_sd = client.model.state_dict()
         neighbor_idxs = random.sample(graph[client_idx], C)
+
+        # Calc total dataset length for the client and neighbors
+        for neighbor_idx in neighbor_idxs:
+            neighbor = clients[neighbor_idx]
+            client_dataset_len = len(neighbor.dataset)
+            total_dataset_len += client_dataset_len
+
+        client_dataset_len = len(client.dataset)
         for layer in client_model_sd.keys():
+            
+            client_model_sd[layer] = client_model_sd[layer] * (client_dataset_len / total_dataset_len) 
             for neighbor_idx in neighbor_idxs:
                 neighbor = clients[neighbor_idx]
-                client_model_sd[layer] += neighbor.model.state_dict()[layer]
+                neighbor_dataset_len = len(neighbor.dataset)
+                client_model_sd[layer] += neighbor.model.state_dict()[layer]*(neighbor_dataset_len/total_dataset_len)
+                #print(client_model_sd[layer])
             # Average
-            client_model_sd[layer] = torch.div(client_model_sd[layer], C+1)
         client.model.load_state_dict(client_model_sd)
     return new_clients
 

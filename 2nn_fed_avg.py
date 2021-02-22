@@ -17,20 +17,28 @@ from common import *
 def update_global_model(sampled_clients, device):
     """
         Update global model by averaging the clients weights and biases.
-        CAUTION: this function currently assumes clients got equally amount of data!
     """
     global_model = copy.deepcopy(sampled_clients[0].model)
     global_model_sd = global_model.state_dict()
-    nr_clients = len(sampled_clients)
+
+    total_dataset_len = 0
+    for client in sampled_clients:
+        total_dataset_len += len(client.dataset)
+
+    first_client_dataset_len = len(sampled_clients[0].dataset)
 
     with torch.no_grad():
         for layer in global_model_sd.keys():
+            
+            global_model_sd[layer] = global_model_sd[layer] * (first_client_dataset_len / total_dataset_len)
             for client in sampled_clients[1:]:
-                global_model_sd[layer] += client.model.state_dict()[layer]
-            # Average
-            global_model_sd[layer] = torch.div(global_model_sd[layer], nr_clients)
+                client_dataset_len = len(client.dataset)
+                global_model_sd[layer] += client.model.state_dict()[layer] * (client_dataset_len/total_dataset_len)
+
     global_model.load_state_dict(global_model_sd)
     return global_model
+
+
 
 
 def test(model, device, test_loader, criterion, args):
