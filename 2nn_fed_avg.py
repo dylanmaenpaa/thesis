@@ -79,12 +79,16 @@ def federated_learning():
         help='input batch size for training (default: 10)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
         help='input batch size for testing (default: 1000)')
+    parser.add_argument('--comm-rounds', type=int, default=200, metavar='N',
+        help='input batch size for testing (default: 200)')
     parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
         help='learning rate (default: 0.1)')                                    
     parser.add_argument('--no-cuda', action='store_true', default=False,
         help='disables CUDA training')
     parser.add_argument('--dry-run', action='store_true', default=False,        
         help='quickly check a single pass')
+    parser.add_argument('--non-iid', action='store_true', default=False,        
+        help='run with non-iid data, default is with iid data')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
         help='random seed (default: 1)')
     parser.add_argument('--save-model', action='store_true', default=True,
@@ -120,15 +124,20 @@ def federated_learning():
     #C = 100  ### number of clients in each round, [1, nr_clients]
     C = args.clients
     client_epochs = 1   # Number of client epochs
-    communication_rounds = 200 # Number of maximum communication rounds
+    communication_rounds = args.comm_rounds # Number of maximum communication rounds
     test_every_x_round = 1
 
     dataset = datasets.MNIST('../data', train=True, download=True,
-                       transform=transform)
-    splitted_datasets = split_to_n_datasets(dataset, nr_clients, args)
+                transform=transform)
     dataset2 = datasets.MNIST('../data', train=False,
-                       transform=transform)
+                transform=transform)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
+    
+    if args.non_iid:
+        splitted_datasets = split_to_n_datasets_noniid(dataset, nr_clients)
+    else:
+        splitted_datasets = split_to_n_datasets(dataset, nr_clients, args)
+    
     criterion_test = nn.CrossEntropyLoss(reduction='sum')
     criterion_train = nn.CrossEntropyLoss()
 
@@ -165,7 +174,10 @@ def federated_learning():
 
     # Directory string: (nr_clients)_(C)_(client_epochs)_(communication_rounds)_(test_every_x_round)
     dir_str = '{}_{}_{}_{}_{}/'.format(nr_clients, C, client_epochs, communication_rounds, test_every_x_round)
-    path = './Results/Fedavg/' + dir_str
+    if args.non_iid:
+        path = './Results/Fedavg_non_iid/' + dir_str
+    else:
+        path = './Results/Fedavg_iid/' + dir_str
 
     if args.save_model:
         Path(path).mkdir(parents=True, exist_ok=True)

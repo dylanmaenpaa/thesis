@@ -7,6 +7,7 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 import copy
+import random
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from sklearn.metrics import classification_report
 
@@ -104,3 +105,52 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
+
+# Returns an array with N datasets
+def split_to_n_datasets_noniid(dataset, n):
+    shards = create_shards(dataset, 20)
+    
+    datasets = split_shards(shards, n)
+    return datasets
+
+# Creates nr_shards shards for every number. non-IID
+def create_shards(dataset_in, nr_shards):
+    shards = []
+    
+    for number in range(10):
+        dataset = copy.deepcopy(dataset_in)
+        idx = dataset.targets==number
+        dataset.targets = dataset.targets[idx]
+        dataset.data = dataset.data[idx]
+
+        shard_size = len(dataset)//nr_shards
+        sizes = [shard_size for _ in range(nr_shards)]
+        rest = len(dataset)-(shard_size*nr_shards)
+        for i in range(rest):
+            idx = i % len(sizes)
+            sizes[idx] += 1
+        shards.append(torch.utils.data.random_split(dataset, sizes, generator=torch.Generator().manual_seed(42)))
+    return shards
+
+
+# #plit 2 shards into n datasets non-IID code
+def split_shards(shards, nr_clients):
+    datasets = []
+    numbers = [i for i in range(10)]
+    for i in range(nr_clients):
+        if len(numbers) == 1:
+            rand_nmbr_1 = numbers[0]
+            rand_nmbr_2 = numbers[0]
+        else:
+            rand_nmbr_1, rand_nmbr_2 = random.sample(numbers, 2)
+
+        shard_1 = shards[rand_nmbr_1].pop()
+        shard_2 = shards[rand_nmbr_2].pop()
+        if len(shards[rand_nmbr_1]) == 0:
+            numbers.remove(rand_nmbr_1)
+        if len(shards[rand_nmbr_2]) == 0 and rand_nmbr_2 != rand_nmbr_1:
+            numbers.remove(rand_nmbr_2)
+        dataset = torch.utils.data.ConcatDataset([shard_1, shard_2])
+        #print(len(dataset))
+        datasets.append(dataset)
+    return datasets
