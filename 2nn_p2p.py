@@ -110,14 +110,18 @@ def decentralized_learning():
         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=100, metavar='N',         ### Changed
+    parser.add_argument('--epochs', type=int, default=100, metavar='N',         ### Changed, NOT USED
         help='number of epochs to train (default: 14)')
+    parser.add_argument('--comm-rounds', type=int, default=200, metavar='N',
+        help='input batch size for testing (default: 200)')
     parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
         help='learning rate (default: 1.0)')                                    ### Changed
     parser.add_argument('--no-cuda', action='store_true', default=False,
         help='disables CUDA training')
     parser.add_argument('--dry-run', action='store_true', default=False,        
         help='quickly check a single pass')
+    parser.add_argument('--non-iid', action='store_true', default=False,        
+        help='run with non-iid data, default is with iid data')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
         help='random seed (default: 1)')
     parser.add_argument('--save-models', action='store_true', default=True,
@@ -131,10 +135,8 @@ def decentralized_learning():
     ### PARAMETERS
     nr_clients = 100 # number of clients/entities
     C = args.neighbor_clients  # number of neighbors to communicate with in each round for each clients. range: [0, max_nr_neighbours]
-    print("neighboring clients")
-    print(C)
     client_epochs = 1   # Number of client epochs
-    communication_rounds = 200  # Number of maximum communication rounds
+    communication_rounds = args.comm_rounds  # Number of maximum communication rounds
     test_every_x_round = 10
 
     graph = [] # A list showing connections, e.g. for client 0 neighbors are at index 0. Unidirectional.
@@ -175,10 +177,14 @@ def decentralized_learning():
 
     dataset = datasets.MNIST('../data', train=True, download=True,
                        transform=transform)
-    splitted_datasets = split_to_n_datasets(dataset, nr_clients, args)
     dataset2 = datasets.MNIST('../data', train=False,
                        transform=transform)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
+
+    if args.non_iid:
+        splitted_datasets = split_to_n_datasets_noniid(dataset, nr_clients)
+    else:
+        splitted_datasets = split_to_n_datasets(dataset, nr_clients, args)
 
     criterion_test = nn.CrossEntropyLoss(reduction='sum')
     criterion_train = nn.CrossEntropyLoss()
@@ -218,7 +224,12 @@ def decentralized_learning():
 
     # Directory string: (nr_clients)_(C)_(client_epochs)_(communication_rounds)_(test_every_x_round)
     dir_str = '{}_{}_{}_{}_{}/'.format(nr_clients, C, client_epochs, communication_rounds, test_every_x_round)
-    path = './Results/P2P/' + dir_str
+
+    if args.non_iid:
+        print(dir_str)
+        path = './Results/P2P_non_iid/' + dir_str
+    else:
+        path ='./Results/P2P_iid/' + dir_str
 
     if args.save_models:
         #create dirs if nonexistent
