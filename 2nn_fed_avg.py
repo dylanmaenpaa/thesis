@@ -81,6 +81,8 @@ def federated_learning():
         help='input batch size for testing (default: 1000)')
     parser.add_argument('--comm-rounds', type=int, default=200, metavar='N',
         help='input batch size for testing (default: 200)')
+    parser.add_argument('--epochs', type=int, default=1, metavar='N',
+        help='local client epochs (default 1')
     parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
         help='learning rate (default: 0.1)')                                    
     parser.add_argument('--no-cuda', action='store_true', default=False,
@@ -123,7 +125,7 @@ def federated_learning():
     nr_clients = 100 ### NUMBER OF CLIENTS/ENTITIES
     #C = 100  ### number of clients in each round, [1, nr_clients]
     C = args.clients
-    client_epochs = 1   # Number of client epochs
+    client_epochs = args.epochs   # Number of client epochs
     communication_rounds = args.comm_rounds # Number of maximum communication rounds
     test_every_x_round = 1
 
