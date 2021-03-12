@@ -132,3 +132,11 @@ dmypy.json
 Results
 imgs
 *.out
+2021*
+
+
+#Scripts
+scripts
+
+#Vscode
+.vscode

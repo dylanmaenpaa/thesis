@@ -110,8 +110,6 @@ def decentralized_learning():
         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=100, metavar='N',         ### Changed, NOT USED
-        help='number of epochs to train (default: 14)')
     parser.add_argument('--comm-rounds', type=int, default=200, metavar='N',
         help='input batch size for testing (default: 200)')
     parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
@@ -120,6 +118,8 @@ def decentralized_learning():
         help='disables CUDA training')
     parser.add_argument('--dry-run', action='store_true', default=False,        
         help='quickly check a single pass')
+    parser.add_argument('--epochs', type=int, default=1, metavar='N',
+        help='local client epochs (default 1')        
     parser.add_argument('--non-iid', action='store_true', default=False,        
         help='run with non-iid data, default is with iid data')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
@@ -135,7 +135,7 @@ def decentralized_learning():
     ### PARAMETERS
     nr_clients = 100 # number of clients/entities
     C = args.neighbor_clients  # number of neighbors to communicate with in each round for each clients. range: [0, max_nr_neighbours]
-    client_epochs = 1   # Number of client epochs
+    client_epochs = args.epochs   # Number of client epochs
     communication_rounds = args.comm_rounds  # Number of maximum communication rounds
     test_every_x_round = 10
 
