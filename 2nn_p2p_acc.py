@@ -51,8 +51,8 @@ def fscore_diffs_neighbors(client_idx, clients_metrics):
         for dig in digs:
             client_fscore = client_metrics['classification_report'][dig]['f1-score']
             neighbor_fscore = neighbor_metrics['classification_report'][dig]['f1-score']
-            if neighbor_fscore > client_fscore:
-                value += neighbor_fscore  - client_fscore
+            #if neighbor_fscore > client_fscore:
+            value += neighbor_fscore  - client_fscore
         diffs.append((idx, value))
     # Shuffle before sort to avoid the initial neighbors in the array to be chosen
     # more often
@@ -264,7 +264,7 @@ def decentralized_learning():
 
     if args.non_iid:
         print(dir_str)
-        path = './Results/P2P_acc_non_iid/' + dir_str
+        path = './Results/P2P_acc_non_iid_2/' + dir_str
     else:
         path ='./Results/P2P_acc_iid/' + dir_str
 
